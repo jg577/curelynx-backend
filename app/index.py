@@ -27,7 +27,8 @@ openai_emb_service = OpenAIEmbeddings(
 )
 
 
-@app.route("/")
+@app.route("/", methods=["GET"])
+@cross_origin()
 def index():
     return "This is the flask app"
 
