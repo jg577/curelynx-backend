@@ -28,6 +28,10 @@ openai_emb_service = OpenAIEmbeddings(
 
 
 @app.route("/")
+def index():
+    return "This is the flask app"
+
+
 @app.route("/api/get_trials", methods=["POST"])
 @cross_origin()
 def get_trials():
