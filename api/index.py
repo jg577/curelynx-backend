@@ -52,6 +52,6 @@ def get_trials():
         vector=question_embedding,
         top_k=4,
         include_metadata=True,
-    )
+    ).to_dict()
     app.logger.info(f"Got results from the index: {result}")
     return result
