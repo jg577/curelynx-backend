@@ -40,7 +40,7 @@ def get_trials():
     This function gets the request and returns a list of clinical trials that could be useful
     """
     app.logger.info("Reached the function")
-    data = json.load(request.data)
+    data = request.get_json()
     # condition = data["condition"]
     query_text = data["question"]
     app.logger.info(f"Retrieved data into the function {data}")
