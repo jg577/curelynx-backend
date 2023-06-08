@@ -6,7 +6,6 @@ import requests
 import os
 import pinecone
 from langchain.embeddings.openai import OpenAIEmbeddings
-import vercel
 
 
 app = Flask(__name__)
@@ -40,13 +39,13 @@ def get_trials():
     """
     This function gets the request and returns a list of clinical trials that could be useful
     """
-    vercel.log("Reached the function")
+    app.logger.info("Reached the function")
     data = json.load(request.data)
     # condition = data["condition"]
     query_text = data["question"]
-    vercel.log(f"Retrieved data into the function {data}")
+    app.logger.info(f"Retrieved data into the function {data}")
     question_embedding = openai_emb_service.embed_query(query_text)
-    vercel.log(f"Got embedding information from openai: { question_embedding}")
+    app.logger.info(f"Got embedding information from openai: { question_embedding}")
     pinecone.init(api_key=PINECONE_API_KEY, environment="asia-southeast1-gcp-free")
     index = pinecone.GRPCIndex(PINECONE_INDEX_NAME)
     result = index.query(
@@ -54,5 +53,5 @@ def get_trials():
         top_k=4,
         include_metadata=True,
     )
-    vercel.log(f"Got results from the index: {result}")
+    app.logger.info(f"Got results from the index: {result}")
     return result
