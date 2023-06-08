@@ -3,3 +3,4 @@ flask
 langchain
 requests
 flask_cors
+vercel
