@@ -74,7 +74,7 @@ def start_conversation():
     It then creates a langchain agent with a llm that uses the question as a prompt and returns a response by also reading through a pinecone document.
     """
     query = request.get_json()["question"]
-    result = qa({"Question": query})
+    result = qa({"question": query})
     return result["answer"]
 
 
