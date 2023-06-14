@@ -10,6 +10,7 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from langchain.vectorstores import Pinecone
+from langchain.chat_models import ChatOpenAI
 
 app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
@@ -34,7 +35,10 @@ vectorstore = Pinecone(index, openai_emb_service.embed_query, "text")
 
 memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 qa = ConversationalRetrievalChain.from_llm(
-    llm=OpenAI(temperature=0), retriever=vectorstore.as_retriever(), memory=memory
+    llm=ChatOpenAI(temperature=0, model="gpt-4"),
+    retriever=vectorstore.as_retriever(),
+    memory=memory,
+    condense_question_llm=ChatOpenAI(temperature=0, model="gpt-3.5-turbo"),
 )
 
 
