@@ -59,7 +59,7 @@ def get_trials():
     app.logger.info(f"Got embedding information from openai: { question_embedding}")
     result = index.query(
         vector=question_embedding,
-        top_k=4,
+        top_k=10,
         include_metadata=True,
     ).to_dict()
     app.logger.info(f"Got results from the index: {result}")
