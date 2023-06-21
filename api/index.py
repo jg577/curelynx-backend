@@ -80,7 +80,7 @@ def start_conversation():
     """
     query = request.get_json()["question"]
     result = qa({"question": query})
-    return result
+    return {"answer": result["answer"]}
 
 
 if __name__ == "__main__":
