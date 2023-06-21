@@ -36,7 +36,7 @@ vectorstore = Pinecone(index, openai_emb_service.embed_query, "text")
 memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 qa = ConversationalRetrievalChain.from_llm(
     llm=ChatOpenAI(temperature=0.3, model="gpt-4", max_tokens=500),
-    retriever=vectorstore.as_retriever(search_kwargs={"k": 8}),
+    retriever=vectorstore.as_retriever(search_kwargs={"k": 5}),
     memory=memory,
 )
 
