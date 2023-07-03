@@ -30,8 +30,8 @@ openai_emb_service = OpenAIEmbeddings(
     openai_organization=OPENAI_ORGANIZATION,
 )
 pinecone.init(api_key=PINECONE_API_KEY, environment="asia-southeast1-gcp-free")
-index = pinecone.Index(PINECONE_INDEX_NAME)
-vectorstore = Pinecone(index, openai_emb_service.embed_query, "text")
+pinecone_index = pinecone.Index(PINECONE_INDEX_NAME)
+vectorstore = Pinecone(pinecone_index, openai_emb_service.embed_query, "text")
 
 memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 qa = ConversationalRetrievalChain.from_llm(
@@ -60,7 +60,7 @@ def get_trials():
     app.logger.info(f"Retrieved data into the function {data}")
     question_embedding = openai_emb_service.embed_query(query_text)
     app.logger.info(f"Got embedding information from openai: { question_embedding}")
-    result = index.query(
+    result = pinecone_index.query(
         vector=question_embedding,
         top_k=10,
         include_metadata=True,
