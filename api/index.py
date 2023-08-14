@@ -16,9 +16,9 @@ app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
 CORS(app, origins=["*"])
 
-PINECONE_API_KEY = "18c82607-fc28-4bf1-a879-b373a58568af"
+PINECONE_API_KEY = os.environ["PINECONE_API_KEY"]
 PINECONE_ENVIRONMENT = os.environ["PINECONE_ENVIRONMENT"]
-PINECONE_INDEX_NAME = "clinical-trials-v2"
+PINECONE_INDEX_NAME = os.environ["PINECONE_INDEX_NAME"]
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 OPENAI_ORGANIZATION = os.environ["OPENAI_ORGANIZATION"]
 OPENAI_EMBEDDING_MODEL_NAME = os.environ["OPENAI_EMBEDDING_MODEL_NAME"]
@@ -32,13 +32,6 @@ openai_emb_service = OpenAIEmbeddings(
 pinecone.init(api_key=PINECONE_API_KEY, environment="asia-southeast1-gcp-free")
 pinecone_index = pinecone.Index(PINECONE_INDEX_NAME)
 vectorstore = Pinecone(pinecone_index, openai_emb_service.embed_query, "text")
-
-memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-qa = ConversationalRetrievalChain.from_llm(
-    llm=ChatOpenAI(temperature=0.7, model="gpt-4", max_tokens=500),
-    retriever=vectorstore.as_retriever(search_kwargs={"k": 3}),
-    memory=memory,
-)
 
 
 @app.route("/", methods=["GET"])
@@ -67,20 +60,6 @@ def get_trials():
     ).to_dict()
     app.logger.info(f"Got results from the index: {result}")
     return result
-
-
-@app.route("/api/start_conversation", methods=["POST"])
-@cross_origin()
-def start_conversation():
-    """
-    This function reads the question field from the request.
-    It then creates a langchain agent with a llm that uses the
-    question as a prompt and returns a response by also reading
-    through a pinecone document.
-    """
-    query = request.get_json()["question"]
-    result = qa({"question": query})
-    return {"answer": result["answer"]}
 
 
 if __name__ == "__main__":
