@@ -3,5 +3,7 @@ flask
 langchain
 requests
 flask_cors
+tiktoken
 vercel
 pinecone-client[grpc]
+
