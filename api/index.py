@@ -1,16 +1,10 @@
-import json
 import logging
 from flask import Flask, request
 from flask_cors import CORS, cross_origin
-from langchain import OpenAI
-import requests
 import os
 import pinecone
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.memory import ConversationBufferMemory
-from langchain.chains import ConversationalRetrievalChain
-from langchain.vectorstores import Pinecone
-from langchain.chat_models import ChatOpenAI
+
 
 app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
@@ -31,7 +25,6 @@ openai_emb_service = OpenAIEmbeddings(
 )
 pinecone.init(api_key=PINECONE_API_KEY, environment="asia-southeast1-gcp-free")
 pinecone_index = pinecone.Index(PINECONE_INDEX_NAME)
-vectorstore = Pinecone(pinecone_index, openai_emb_service.embed_query, "text")
 
 
 @app.route("/", methods=["GET"])
@@ -50,15 +43,15 @@ def get_trials():
     data = request.get_json()
     # condition = data["condition"]
     query_text = data["question"]
-    app.logger.info(f"Retrieved data into the function {data}")
+    app.logger.info("Retrieved data into the function %s", data)
     question_embedding = openai_emb_service.embed_query(query_text)
-    app.logger.info(f"Got embedding information from openai: { question_embedding}")
+    app.logger.info("Got embedding information from openai: %s", question_embedding)
     result = pinecone_index.query(
         vector=question_embedding,
-        top_k=10,
+        top_k=5,
         include_metadata=True,
     ).to_dict()
-    app.logger.info(f"Got results from the index: {result}")
+    app.logger.info("Got results from the index: %s", result)
     return result
 
 
