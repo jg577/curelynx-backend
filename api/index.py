@@ -51,7 +51,9 @@ def get_trials():
         top_k=5,
         include_metadata=True,
     ).to_dict()
-    app.logger.info("Got results from the index: %s", result)
+    app.logger.info(
+        "Got results from the index: %s",
+    )
     return result
 
 
