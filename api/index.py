@@ -67,9 +67,9 @@ def get_trials():
     result = pinecone_index.query(
         vector=question_embedding,
         filter={
-            "city": {"$eq": location_dict.city},
-            "state": {"$eq": location_dict.state},
-            "country": {"$eq": location_dict.country},
+            "city": {"$eq": location_dict["city"]},
+            "state": {"$eq": location_dict["state"]},
+            "country": {"$eq": location_dict["country"]},
         },
         top_k=5,
         include_metadata=True,
