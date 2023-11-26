@@ -105,14 +105,14 @@ def get_trials():
             **results_no_filter,
         }
         i = 0
-        if combined_results.matches[i].metadata.NCTId not in trial_ids:
-            trial_ids.append(combined_results.matches[0].metadata.NCTId)
-            matches.append(combined_results.matches[i])
+        if combined_results["matches"][i]["metadata"]["NCTId"] not in trial_ids:
+            trial_ids.append(combined_results["matches"][i]["metadata"]["NCTId"])
+            matches.append(combined_results["matches"][i]["metadata"]["NCTId"])
             i += 1
             n_matches += -1
 
     app.logger.info("Got results from the index: %s", combined_results)
-    return combined_results
+    return {"matches": combined_results}
 
 
 if __name__ == "__main__":
