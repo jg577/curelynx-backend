@@ -62,12 +62,13 @@ def get_trials():
     location_dict = json.loads(chat_response.choices[0].message.content)
     app.logger.info("location dict is %s", location_dict)
     question_embedding = openai_emb_service.embed_query(query_text)
+    k = 5
     result_city = pinecone_index.query(
         vector=question_embedding,
         filter={
             "city": {"$eq": location_dict["city"]},
         },
-        top_k=10,
+        top_k=k,
         include_metadata=True,
     ).to_dict()
     result_state = pinecone_index.query(
@@ -75,7 +76,7 @@ def get_trials():
         filter={
             "state": {"$eq": location_dict["state"]},
         },
-        top_k=10,
+        top_k=k,
         include_metadata=True,
     ).to_dict()
     result_country = pinecone_index.query(
@@ -83,10 +84,33 @@ def get_trials():
         filter={
             "country": {"$eq": location_dict["country"]},
         },
-        top_k=10,
+        top_k=k,
         include_metadata=True,
     ).to_dict()
-    combined_results = {**result_city, **result_state, **result_country}
+    results_no_filter = pinecone_index.query(
+        vector=question_embedding,
+        top_k=k,
+        include_metadata=True,
+    ).to_dict()
+
+    # combinining matches
+    n_matches = k
+    trial_ids = []
+    matches = []
+    while n_matches >= 0:
+        combined_results = {
+            **result_city,
+            **result_state,
+            **result_country,
+            **results_no_filter,
+        }
+        i = 0
+        if combined_results.matches[i].metadata.NCTId not in trial_ids:
+            trial_ids.append(combined_results.matches[0].metadata.NCTId)
+            matches.append(combined_results.matches[i])
+            i += 1
+            n_matches += -1
+
     app.logger.info("Got results from the index: %s", combined_results)
     return combined_results
 
