@@ -63,7 +63,6 @@ def get_trials():
     app.logger.info("location dict is %s", location_dict)
     app.logger.info("Retrieved data into the function %s", data)
     question_embedding = openai_emb_service.embed_query(query_text)
-    app.logger.info("Got embedding information from openai: %s", question_embedding)
     result = pinecone_index.query(
         vector=question_embedding,
         filter={
@@ -71,12 +70,10 @@ def get_trials():
             "state": {"$eq": location_dict["state"]},
             "country": {"$eq": location_dict["country"]},
         },
-        top_k=5,
+        top_k=10,
         include_metadata=True,
     ).to_dict()
-    app.logger.info(
-        "Got results from the index: %s",
-    )
+    app.logger.info("Got results from the index: %s", result)
     return result
 
 
