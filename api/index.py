@@ -25,7 +25,7 @@ openai_emb_service = OpenAIEmbeddings(
     openai_api_key=OPENAI_API_KEY,
     openai_organization=OPENAI_ORGANIZATION,
 )
-pinecone.init(api_key=PINECONE_API_KEY, environment="asia-southeast1-gcp-free")
+pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_ENVIRONMENT)
 pinecone_index = pinecone.Index(PINECONE_INDEX_NAME)
 
 
