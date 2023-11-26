@@ -53,7 +53,7 @@ def get_trials():
         messages=[
             {
                 "role": "system",
-                "content": "please read the patient note and infer the city, state and country of the user and return just a json of these three fields. For example {'city':'', 'state':'', 'country:''",
+                "content": "please read the patient note and infer the city, state and country of the user and return just a json of these three fields. Use United States in country name instead of US or USA. For example {'city':'', 'state':'', 'country:''}",
             },
             {"role": "user", "content": query_text},
         ],
@@ -61,20 +61,34 @@ def get_trials():
     app.logger.info("Chat response is %s", chat_response)
     location_dict = json.loads(chat_response.choices[0].message.content)
     app.logger.info("location dict is %s", location_dict)
-    app.logger.info("Retrieved data into the function %s", data)
     question_embedding = openai_emb_service.embed_query(query_text)
-    result = pinecone_index.query(
+    result_city = pinecone_index.query(
         vector=question_embedding,
         filter={
             "city": {"$eq": location_dict["city"]},
+        },
+        top_k=10,
+        include_metadata=True,
+    ).to_dict()
+    result_state = pinecone_index.query(
+        vector=question_embedding,
+        filter={
             "state": {"$eq": location_dict["state"]},
+        },
+        top_k=10,
+        include_metadata=True,
+    ).to_dict()
+    result_country = pinecone_index.query(
+        vector=question_embedding,
+        filter={
             "country": {"$eq": location_dict["country"]},
         },
         top_k=10,
         include_metadata=True,
     ).to_dict()
-    app.logger.info("Got results from the index: %s", result)
-    return result
+    combined_results = {**result_city, **result_state, **result_country}
+    app.logger.info("Got results from the index: %s", combined_results)
+    return combined_results
 
 
 if __name__ == "__main__":
