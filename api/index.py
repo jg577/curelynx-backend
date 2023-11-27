@@ -5,6 +5,7 @@ from flask_cors import CORS, cross_origin
 import os
 import pinecone
 from langchain.embeddings.openai import OpenAIEmbeddings
+from collections import Counter
 from openai import OpenAI
 
 
@@ -98,12 +99,12 @@ def get_trials():
     n_matches = k
     trial_ids = []
     matches = []
-    combined_results = {
-        **result_city,
-        **result_state,
-        **result_country,
-        **results_no_filter,
-    }
+    combined_results = dict(
+        Counter(result_city)
+        + Counter(result_state)
+        + Counter(result_country)
+        + Counter(results_no_filter)
+    )
     i = 0
     while n_matches >= 0:
         app.logger.info("matches are %s", matches)
