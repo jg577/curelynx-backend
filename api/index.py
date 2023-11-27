@@ -95,7 +95,7 @@ def get_trials():
     ).to_dict()
 
     # combinining matches
-    n_matches = k
+    n_matches_left = k
     trial_ids = []
     combined_matches = []
     location_index = 0
@@ -105,14 +105,14 @@ def get_trials():
         results_country,
         results_no_filter,
     ]
-    while n_matches >= 0:
+    while n_matches_left >= 0:
         app.logger.info("matches are %s", trial_ids)
-        for matches in location_dict_list[location_index]["matches"]:
-            for i in matches:
-                if i["metadata"]["NCTId"] not in trial_ids:
-                    trial_ids.append(i["metadata"]["NCTId"])
-                    combined_matches.append(i)
-                    n_matches += -1
+        for location_dict in location_dict_list:
+            for match in location_dict["matches"]:
+                if match["metadata"]["NCTId"] not in trial_ids:
+                    trial_ids.append(match["metadata"]["NCTId"])
+                    combined_matches.append(match)
+                    n_matches_left += -1
         location_index += 1
 
     app.logger.info("Got results from the index: %s", combined_matches)
