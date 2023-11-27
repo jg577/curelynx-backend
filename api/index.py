@@ -64,7 +64,7 @@ def get_trials():
     app.logger.info("location dict is %s", location_dict)
     question_embedding = openai_emb_service.embed_query(query_text)
     k = 5
-    result_city = pinecone_index.query(
+    results_city = pinecone_index.query(
         vector=question_embedding,
         filter={
             "city": {"$eq": location_dict["city"]},
@@ -73,7 +73,7 @@ def get_trials():
         include_metadata=True,
     ).to_dict()
     app.logger.info("location dict is %s", result_city)
-    result_state = pinecone_index.query(
+    results_state = pinecone_index.query(
         vector=question_embedding,
         filter={
             "state": {"$eq": location_dict["state"]},
@@ -81,7 +81,7 @@ def get_trials():
         top_k=k,
         include_metadata=True,
     ).to_dict()
-    result_country = pinecone_index.query(
+    results_country = pinecone_index.query(
         vector=question_embedding,
         filter={
             "country": {"$eq": location_dict["country"]},
@@ -98,24 +98,26 @@ def get_trials():
     # combinining matches
     n_matches = k
     trial_ids = []
-    matches = []
-    combined_results = dict(
-        Counter(result_city)
-        + Counter(result_state)
-        + Counter(result_country)
-        + Counter(results_no_filter)
-    )
-    i = 0
+    combined_matches = []
+    location_index = 0
+    location_dict_list = [
+        results_city,
+        results_state,
+        results_country,
+        results_no_filter,
+    ]
     while n_matches >= 0:
-        app.logger.info("matches are %s", matches)
-        if combined_results["matches"][i]["metadata"]["NCTId"] not in trial_ids:
-            trial_ids.append(combined_results["matches"][i]["metadata"]["NCTId"])
-            matches.append(combined_results["matches"][i]["metadata"]["NCTId"])
-            n_matches += -1
-        i += 1
+        app.logger.info("matches are %s", trial_ids)
+        for matches in location_dict_list[location_index]["matches"]:
+            for i in matches:
+                if i["metadata"]["NCTId"] not in trial_ids:
+                    trial_ids.append(i["metadata"]["NCTId"])
+                    combined_matches.append(i)
+                    n_matches += -1
+        location_index += 1
 
-    app.logger.info("Got results from the index: %s", combined_results)
-    return {"matches": combined_results}
+    app.logger.info("Got results from the index: %s", combined_matches)
+    return {"matches": combined_matches}
 
 
 if __name__ == "__main__":
