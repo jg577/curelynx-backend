@@ -116,7 +116,7 @@ def get_trials():
         location_index += 1
 
     app.logger.info("Got results from the index: %s", combined_matches)
-    return {"matches": combined_matches}
+    return {"matches": combined_matches[:k]}
 
 
 if __name__ == "__main__":
