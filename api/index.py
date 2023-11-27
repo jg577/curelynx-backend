@@ -5,7 +5,6 @@ from flask_cors import CORS, cross_origin
 import os
 import pinecone
 from langchain.embeddings.openai import OpenAIEmbeddings
-from collections import Counter
 from openai import OpenAI
 
 
