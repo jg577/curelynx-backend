@@ -71,6 +71,7 @@ def get_trials():
         top_k=k,
         include_metadata=True,
     ).to_dict()
+    app.logger.info("location dict is %s", result_city)
     result_state = pinecone_index.query(
         vector=question_embedding,
         filter={
@@ -97,13 +98,14 @@ def get_trials():
     n_matches = k
     trial_ids = []
     matches = []
+    combined_results = {
+        **result_city,
+        **result_state,
+        **result_country,
+        **results_no_filter,
+    }
     while n_matches >= 0:
-        combined_results = {
-            **result_city,
-            **result_state,
-            **result_country,
-            **results_no_filter,
-        }
+        app.logger.info("matches are %s", matches)
         i = 0
         if combined_results["matches"][i]["metadata"]["NCTId"] not in trial_ids:
             trial_ids.append(combined_results["matches"][i]["metadata"]["NCTId"])
