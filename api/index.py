@@ -104,14 +104,14 @@ def get_trials():
         **result_country,
         **results_no_filter,
     }
+    i = 0
     while n_matches >= 0:
         app.logger.info("matches are %s", matches)
-        i = 0
         if combined_results["matches"][i]["metadata"]["NCTId"] not in trial_ids:
             trial_ids.append(combined_results["matches"][i]["metadata"]["NCTId"])
             matches.append(combined_results["matches"][i]["metadata"]["NCTId"])
-            i += 1
             n_matches += -1
+        i += 1
 
     app.logger.info("Got results from the index: %s", combined_results)
     return {"matches": combined_results}
