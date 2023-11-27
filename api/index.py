@@ -72,7 +72,6 @@ def get_trials():
         top_k=k,
         include_metadata=True,
     ).to_dict()
-    app.logger.info("location dict is %s", result_city)
     results_state = pinecone_index.query(
         vector=question_embedding,
         filter={
