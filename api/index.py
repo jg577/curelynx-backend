@@ -109,14 +109,14 @@ def get_trials():
         results_country,
         results_no_filter,
     ]
-    while n_matches_left >= 0:
+    while location_index < len(location_dict_list):
         app.logger.info("matches are %s", trial_ids)
-        for location_dict in location_dict_list:
-            for match in location_dict["matches"]:
-                if match["metadata"]["NCTId"] not in trial_ids:
-                    trial_ids.append(match["metadata"]["NCTId"])
-                    combined_matches.append(match)
-                    n_matches_left += -1
+        location_dict = location_dict_list[location_index]
+        for match in location_dict["matches"]:
+            if match["metadata"]["NCTId"] not in trial_ids:
+                trial_ids.append(match["metadata"]["NCTId"])
+                combined_matches.append(match)
+                n_matches_left += -1
         location_index += 1
 
     app.logger.info("Got results from the index: %s", combined_matches)
