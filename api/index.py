@@ -94,9 +94,7 @@ def get_trials():
     results_no_filter = pinecone_index.query(
         vector=question_embedding,
         top_k=k,
-        filter={
-            "condition": {"$eq": content["condition"]}
-        }
+        filter={"condition": {"$eq": content["condition"]}},
         include_metadata=True,
     ).to_dict()
 
