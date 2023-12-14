@@ -73,6 +73,9 @@ def get_trials():
         top_k=k,
         include_metadata=True,
     ).to_dict()
+    app.logger.info(
+        f"city_results: {[match['metadata']['NCTId'] for match in results_city['matches']]}"
+    )
     results_state = pinecone_index.query(
         vector=question_embedding,
         filter={
@@ -82,6 +85,9 @@ def get_trials():
         top_k=k,
         include_metadata=True,
     ).to_dict()
+    app.logger.info(
+        f"state_results: {[match['metadata']['NCTId'] for match in results_state['matches']]}"
+    )
     results_country = pinecone_index.query(
         vector=question_embedding,
         filter={
@@ -91,13 +97,18 @@ def get_trials():
         top_k=k,
         include_metadata=True,
     ).to_dict()
+    app.logger.info(
+        f"county_results: {[match['metadata']['NCTId'] for match in results_country['matches']]}"
+    )
     results_no_filter = pinecone_index.query(
         vector=question_embedding,
         top_k=k,
         filter={"condition": {"$eq": content["condition"]}},
         include_metadata=True,
     ).to_dict()
-
+    app.logger.info(
+        f"other_results: {[match['metadata']['NCTId'] for match in results_no_filter['matches']]}"
+    )
     # combinining matches
     n_matches_left = k
     trial_ids = []
@@ -110,8 +121,8 @@ def get_trials():
         results_no_filter,
     ]
     while location_index < len(location_dict_list):
-        app.logger.info("matches are %s", trial_ids)
         location_dict = location_dict_list[location_index]
+        app.logger.info(f"for index {i} location dict is {location_dict}")
         for match in location_dict["matches"]:
             if match["metadata"]["NCTId"] not in trial_ids:
                 trial_ids.append(match["metadata"]["NCTId"])
@@ -119,7 +130,7 @@ def get_trials():
                 n_matches_left += -1
         location_index += 1
 
-    app.logger.info("Got results from the index: %s", combined_matches)
+    # app.logger.info("Got results from the index: %s", combined_matches)
     return {"matches": combined_matches[:k]}
 
 
