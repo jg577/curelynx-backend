@@ -54,7 +54,7 @@ def get_trials():
         messages=[
             {
                 "role": "system",
-                "content": "please read the patient note and infer the disease/condition, city, state and country of the user and return just a json of these four fields. for condition, use the MeSH format. Use United States in country name instead of US or USA and camel case. For example {'condition': '','city':'', 'state':'', 'country:''}",
+                "content": "please read the patient note and infer the disease/condition, city, state and country of the user and return just a json of these four fields. Use United States in country name instead of US or USA and camel case. For example {'condition': '','city':'', 'state':'', 'country:''}",
             },
             {"role": "user", "content": query_text},
         ],
