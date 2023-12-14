@@ -121,7 +121,6 @@ def get_trials():
     ]
     while location_index < len(location_dict_list):
         location_dict = location_dict_list[location_index]
-        app.logger.info(f"for index {location_index} location dict is {location_dict}")
         for match in location_dict["matches"]:
             if match["metadata"]["NCTId"] not in trial_ids:
                 trial_ids.append(match["metadata"]["NCTId"])
