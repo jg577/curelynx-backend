@@ -47,52 +47,67 @@ def get_trials():
     query_text = data["question"]
     # get parsed_location for metadata filter:
     app.logger.info("Query text is %s", query_text)
+    condition_list = []
     chat_response = openai_client.chat.completions.create(
         model="gpt-3.5-turbo-1106",
         response_format={"type": "json_object"},
         messages=[
             {
                 "role": "system",
-                "content": "please read the patient note and infer the city, state and country of the user and return just a json of these three fields. Use United States in country name instead of US or USA. For example {'city':'', 'state':'', 'country:''}",
+                "content": "please read the patient note and infer the disease/condition, city, state and country of the user and return just a json of these four fields. Use MeSH term for condition name.  Use United States in country name instead of US or USA and camel case. For example {'condition': '','city':'', 'state':'', 'country:''}",
             },
             {"role": "user", "content": query_text},
         ],
     )
     app.logger.info("Chat response is %s", chat_response)
-    location_dict = json.loads(chat_response.choices[0].message.content)
-    app.logger.info("location dict is %s", location_dict)
+    content = json.loads(chat_response.choices[0].message.content)
+    app.logger.info("location dict is %s", content)
     question_embedding = openai_emb_service.embed_query(query_text)
     k = 5
     results_city = pinecone_index.query(
         vector=question_embedding,
         filter={
-            "city": {"$eq": location_dict["city"]},
+            "city": {"$eq": content["city"]},
+            "condition": {"$eq": content["condition"]},
         },
         top_k=k,
         include_metadata=True,
     ).to_dict()
+    app.logger.info(
+        f"city_results: {[match['metadata']['NCTId'] for match in results_city['matches']]}"
+    )
     results_state = pinecone_index.query(
         vector=question_embedding,
         filter={
-            "state": {"$eq": location_dict["state"]},
+            "state": {"$eq": content["state"]},
+            "condition": {"$eq": content["condition"]},
         },
         top_k=k,
         include_metadata=True,
     ).to_dict()
+    app.logger.info(
+        f"state_results: {[match['metadata']['NCTId'] for match in results_state['matches']]}"
+    )
     results_country = pinecone_index.query(
         vector=question_embedding,
         filter={
-            "country": {"$eq": location_dict["country"]},
+            "country": {"$eq": content["country"]},
+            "condition": {"$eq": content["condition"]},
         },
         top_k=k,
         include_metadata=True,
     ).to_dict()
+    app.logger.info(
+        f"county_results: {[match['metadata']['NCTId'] for match in results_country['matches']]}"
+    )
     results_no_filter = pinecone_index.query(
         vector=question_embedding,
         top_k=k,
         include_metadata=True,
     ).to_dict()
-
+    app.logger.info(
+        f"other_results: {[match['metadata']['NCTId'] for match in results_no_filter['matches']]}"
+    )
     # combinining matches
     n_matches_left = k
     trial_ids = []
@@ -104,17 +119,16 @@ def get_trials():
         results_country,
         results_no_filter,
     ]
-    while n_matches_left >= 0:
-        app.logger.info("matches are %s", trial_ids)
-        for location_dict in location_dict_list:
-            for match in location_dict["matches"]:
-                if match["metadata"]["NCTId"] not in trial_ids:
-                    trial_ids.append(match["metadata"]["NCTId"])
-                    combined_matches.append(match)
-                    n_matches_left += -1
+    while location_index < len(location_dict_list):
+        location_dict = location_dict_list[location_index]
+        for match in location_dict["matches"]:
+            if match["metadata"]["NCTId"] not in trial_ids:
+                trial_ids.append(match["metadata"]["NCTId"])
+                combined_matches.append(match)
+                n_matches_left += -1
         location_index += 1
 
-    app.logger.info("Got results from the index: %s", combined_matches)
+    # app.logger.info("Got results from the index: %s", combined_matches)
     return {"matches": combined_matches[:k]}
 
 
