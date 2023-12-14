@@ -47,26 +47,28 @@ def get_trials():
     query_text = data["question"]
     # get parsed_location for metadata filter:
     app.logger.info("Query text is %s", query_text)
+    condition_list = []
     chat_response = openai_client.chat.completions.create(
         model="gpt-3.5-turbo-1106",
         response_format={"type": "json_object"},
         messages=[
             {
                 "role": "system",
-                "content": "please read the patient note and infer the city, state and country of the user and return just a json of these three fields. Use United States in country name instead of US or USA. For example {'city':'', 'state':'', 'country:''}",
+                "content": "please read the patient note and infer the disease/condition, city, state and country of the user and return just a json of these four fields. for condition, use the MeSH format. Use United States in country name instead of US or USA and camel case. For example {'condition': '','city':'', 'state':'', 'country:''}",
             },
             {"role": "user", "content": query_text},
         ],
     )
     app.logger.info("Chat response is %s", chat_response)
-    location_dict = json.loads(chat_response.choices[0].message.content)
-    app.logger.info("location dict is %s", location_dict)
+    content = json.loads(chat_response.choices[0].message.content)
+    app.logger.info("location dict is %s", content)
     question_embedding = openai_emb_service.embed_query(query_text)
     k = 5
     results_city = pinecone_index.query(
         vector=question_embedding,
         filter={
-            "city": {"$eq": location_dict["city"]},
+            "city": {"$eq": content["city"]},
+            "condition": {"$eq": content["condition"]},
         },
         top_k=k,
         include_metadata=True,
@@ -74,7 +76,8 @@ def get_trials():
     results_state = pinecone_index.query(
         vector=question_embedding,
         filter={
-            "state": {"$eq": location_dict["state"]},
+            "state": {"$eq": content["state"]},
+            "condition": {"$eq": content["condition"]},
         },
         top_k=k,
         include_metadata=True,
@@ -82,7 +85,8 @@ def get_trials():
     results_country = pinecone_index.query(
         vector=question_embedding,
         filter={
-            "country": {"$eq": location_dict["country"]},
+            "country": {"$eq": content["country"]},
+            "condition": {"$eq": content["condition"]},
         },
         top_k=k,
         include_metadata=True,
@@ -90,6 +94,9 @@ def get_trials():
     results_no_filter = pinecone_index.query(
         vector=question_embedding,
         top_k=k,
+        filter={
+            "condition": {"$eq": content["condition"]}
+        }
         include_metadata=True,
     ).to_dict()
 
