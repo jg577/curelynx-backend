@@ -80,8 +80,6 @@ def get_opensearch_results(content):
 
     # Print the response
     data = response.json()
-    import pdb
-
     results = []
 
     for hit in data["hits"]["hits"]:
@@ -121,10 +119,10 @@ def get_trials():
     )
     app.logger.info("Chat response is %s", chat_response)
     content = json.loads(chat_response.choices[0].message.content)
-    app.logger.info("location dict is %s", content)
+    app.logger.info("input dict is %s", content)
 
     combined_matches = get_opensearch_results(content)
-
+    app.logger.info(" output is %s", combined_matches)
     return {"matches": combined_matches}
 
 
