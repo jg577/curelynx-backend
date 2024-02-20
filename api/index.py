@@ -3,7 +3,7 @@ import json
 from flask import Flask, request
 from flask_cors import CORS, cross_origin
 import os
-import openai
+from openai import OpenAI
 import requests
 import json
 
@@ -27,6 +27,9 @@ AWS_OPENSEARCH_INDEX = os.environ["AWS_OPENSEARCH_INDEX"]
 
 @app.route("/", methods=["GET"])
 @cross_origin()
+
+openai_client = OpenAI(api_key=OPENAI_API_KEY)
+
 def index():
     return "This is the flask app"
 
@@ -104,8 +107,9 @@ def get_trials():
     # condition = data["condition"]
     query_text = data["question"]
     # get parsed_location for metadata filter:
+    
     app.logger.info("Query text is %s", query_text)
-    chat_response = openai.ChatCompletion.create(
+    chat_response = openai_client.chat.completions.create(
         model="gpt-3.5-turbo-1106",
         response_format={"type": "json_object"},
         messages=[
