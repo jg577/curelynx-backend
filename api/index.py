@@ -3,36 +3,94 @@ import json
 from flask import Flask, request
 from flask_cors import CORS, cross_origin
 import os
-import pinecone
-from langchain.embeddings.openai import OpenAIEmbeddings
-from openai import OpenAI
-
+import openai
+import requests
+import json
 
 app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
 CORS(app, origins=["*"])
 
 PINECONE_API_KEY = os.environ["PINECONE_API_KEY"]
-PINECONE_ENVIRONMENT = os.environ["PINECONE_ENVIRONMENT"]
 PINECONE_INDEX_NAME = os.environ["PINECONE_INDEX_NAME"]
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 OPENAI_ORGANIZATION = os.environ["OPENAI_ORGANIZATION"]
 OPENAI_EMBEDDING_MODEL_NAME = os.environ["OPENAI_EMBEDDING_MODEL_NAME"]
-
-openai_client = OpenAI(api_key=OPENAI_API_KEY)
-openai_emb_service = OpenAIEmbeddings(
-    model=OPENAI_EMBEDDING_MODEL_NAME,
-    openai_api_key=OPENAI_API_KEY,
-    openai_organization=OPENAI_ORGANIZATION,
-)
-pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_ENVIRONMENT)
-pinecone_index = pinecone.Index(PINECONE_INDEX_NAME)
+AWS_ACCESS_KEY_IAM = os.environ["AWS_ACCESS_KEY"]
+AWS_SECRET_KEY_IAM = os.environ["AWS_SECRET_KEY"]
+AWS_OPENSEARCH_MASTER = os.environ["AWS_OPENSEARCH_MASTER"]
+AWS_OPENSEARCH_PASS = os.environ["AWS_OPENSEARCH_PASS"]
+AWS_OPENSEARCH_REGION = os.environ["AWS_OPENSEARCH_REGION"]
+AWS_OPENSEARCH_URI = os.environ["AWS_OPENSEARCH_URI"]
+AWS_OPENSEARCH_INDEX = os.environ["AWS_OPENSEARCH_INDEX"]
 
 
 @app.route("/", methods=["GET"])
 @cross_origin()
 def index():
     return "This is the flask app"
+
+
+def get_opensearch_results(content):
+    # AWS OpenSearch endpoint URL
+    print(content)
+    url = AWS_OPENSEARCH_URI + "/curelynx-dev-v2/_search"
+
+    # Authentication credentials
+    auth = (AWS_OPENSEARCH_MASTER, AWS_OPENSEARCH_PASS)
+
+    # Elasticsearch query
+    query = {
+        "query": {
+            "bool": {
+                "should": [
+                    {"match": {"condition": content["condition"]}},
+                    {"match": {"condition_mesh_term": content["condition"]}},
+                    {"match": {"brief_summary": content["condition"]}},
+                ],
+                "minimum_should_match": 1,
+                "boost": 2,
+                "filter": [
+                    {"range": {"minimum_age": {"lte": int(content["age"])}}},
+                    {"range": {"maximum_age": {"gte": int(content["age"])}}},
+                    {
+                        "bool": {
+                            "should": [
+                                {"match": {"gender": content["gender"]}},
+                                {"match": {"gender": "All"}},
+                            ]
+                        }
+                    },
+                    {"bool": {"should": [{"match": {"cities": content["city"]}}]}},
+                ],
+            }
+        }
+    }
+
+    # Convert the query to a JSON string
+    query_json = json.dumps(query)
+
+    # Send the request
+    response = requests.get(
+        url, auth=auth, data=query_json, headers={"Content-Type": "application/json"}
+    )
+
+    # Print the response
+    data = response.json()
+    import pdb
+
+    results = []
+
+    for hit in data["hits"]["hits"]:
+        source = hit["_source"]
+        result = {
+            key: value
+            for key, value in source.items()
+            if key not in ["cities", "states"]
+        }
+        results.append(result)
+
+    return results
 
 
 @app.route("/api/get_trials", methods=["POST"])
@@ -47,14 +105,13 @@ def get_trials():
     query_text = data["question"]
     # get parsed_location for metadata filter:
     app.logger.info("Query text is %s", query_text)
-    condition_list = []
-    chat_response = openai_client.chat.completions.create(
+    chat_response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo-1106",
         response_format={"type": "json_object"},
         messages=[
             {
                 "role": "system",
-                "content": "please read the patient note and infer the disease/condition, city, state and country of the user and return just a json of these four fields. Use MeSH term for condition name.  Use United States in country name instead of US or USA and camel case. For example {'condition': '','city':'', 'state':'', 'country:''}",
+                "content": "please read the patient note and infer the age, gender, disease/condition, city, state and country of the user and return just a json of these fields. Use MeSH term for condition name. Use int for age. Use United States in country name instead of US or USA and camel case. For example {'age': '', gender:'','condition': '','city':'', 'state':'', 'country:''}",
             },
             {"role": "user", "content": query_text},
         ],
@@ -62,74 +119,10 @@ def get_trials():
     app.logger.info("Chat response is %s", chat_response)
     content = json.loads(chat_response.choices[0].message.content)
     app.logger.info("location dict is %s", content)
-    question_embedding = openai_emb_service.embed_query(query_text)
-    k = 5
-    results_city = pinecone_index.query(
-        vector=question_embedding,
-        filter={
-            "city": {"$eq": content["city"]},
-            "condition": {"$eq": content["condition"]},
-        },
-        top_k=k,
-        include_metadata=True,
-    ).to_dict()
-    app.logger.info(
-        f"city_results: {[match['metadata']['NCTId'] for match in results_city['matches']]}"
-    )
-    results_state = pinecone_index.query(
-        vector=question_embedding,
-        filter={
-            "state": {"$eq": content["state"]},
-            "condition": {"$eq": content["condition"]},
-        },
-        top_k=k,
-        include_metadata=True,
-    ).to_dict()
-    app.logger.info(
-        f"state_results: {[match['metadata']['NCTId'] for match in results_state['matches']]}"
-    )
-    results_country = pinecone_index.query(
-        vector=question_embedding,
-        filter={
-            "country": {"$eq": content["country"]},
-            "condition": {"$eq": content["condition"]},
-        },
-        top_k=k,
-        include_metadata=True,
-    ).to_dict()
-    app.logger.info(
-        f"county_results: {[match['metadata']['NCTId'] for match in results_country['matches']]}"
-    )
-    results_no_filter = pinecone_index.query(
-        vector=question_embedding,
-        top_k=k,
-        include_metadata=True,
-    ).to_dict()
-    app.logger.info(
-        f"other_results: {[match['metadata']['NCTId'] for match in results_no_filter['matches']]}"
-    )
-    # combinining matches
-    n_matches_left = k
-    trial_ids = []
-    combined_matches = []
-    location_index = 0
-    location_dict_list = [
-        results_city,
-        results_state,
-        results_country,
-        results_no_filter,
-    ]
-    while location_index < len(location_dict_list):
-        location_dict = location_dict_list[location_index]
-        for match in location_dict["matches"]:
-            if match["metadata"]["NCTId"] not in trial_ids:
-                trial_ids.append(match["metadata"]["NCTId"])
-                combined_matches.append(match)
-                n_matches_left += -1
-        location_index += 1
 
-    # app.logger.info("Got results from the index: %s", combined_matches)
-    return {"matches": combined_matches[:k]}
+    combined_matches = get_opensearch_results(content)
+
+    return {"matches": combined_matches}
 
 
 if __name__ == "__main__":
