@@ -87,8 +87,10 @@ def get_opensearch_results(content):
         result = {
             key: value
             for key, value in source.items()
-            if key not in ["cities", "states"]
+            if key not in ["cities", "states", "countries"]
         }
+        # hack for now
+        result = {"metadata": {"text": str(result)}}
         results.append(result)
 
     return results
