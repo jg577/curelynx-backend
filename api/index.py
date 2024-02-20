@@ -25,11 +25,11 @@ AWS_OPENSEARCH_URI = os.environ["AWS_OPENSEARCH_URI"]
 AWS_OPENSEARCH_INDEX = os.environ["AWS_OPENSEARCH_INDEX"]
 
 
-@app.route("/", methods=["GET"])
-@cross_origin()
-
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
+
+@app.route("/", methods=["GET"])
+@cross_origin()
 def index():
     return "This is the flask app"
 
@@ -107,7 +107,6 @@ def get_trials():
     # condition = data["condition"]
     query_text = data["question"]
     # get parsed_location for metadata filter:
-    
     app.logger.info("Query text is %s", query_text)
     chat_response = openai_client.chat.completions.create(
         model="gpt-3.5-turbo-1106",
