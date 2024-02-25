@@ -44,6 +44,7 @@ def get_opensearch_results(content):
 
     # Elasticsearch query
     query = {
+        "size": 5,
         "query": {
             "bool": {
                 "should": [
@@ -67,7 +68,7 @@ def get_opensearch_results(content):
                     {"bool": {"should": [{"match": {"cities": content["city"]}}]}},
                 ],
             }
-        }
+        },
     }
 
     # Convert the query to a JSON string
@@ -86,7 +87,7 @@ def get_opensearch_results(content):
         source = hit["_source"]
         result = {
             key: value
-            for key, value in source.items()[0:5]
+            for key, value in source.items()
             if key not in ["cities", "states", "countries", "locations"]
         }
         # hack for now
