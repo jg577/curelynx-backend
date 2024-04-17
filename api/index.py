@@ -115,7 +115,7 @@ def get_trials():
         messages=[
             {
                 "role": "system",
-                "content": "please read the patient note and infer the age, gender, disease/condition, city, state and country of the user and return just a json of these fields. Use MeSH term for condition name. Use int for age. Use United States in country name instead of US or USA and camel case. For example {'age': '', gender:'','condition': '','city':'', 'state':'', 'country:''}",
+                "content": "please read the patient note and infer the age, gender, disease/condition, city, state and country of the user and return just a json of these fields. Use MeSH term for condition name. Use int for age. The input might also have zipcode. Use United States in country name instead of US or USA and camel case. For example {'age': '', gender:'','condition': '','city':'', 'state':'', 'country:''}",
             },
             {"role": "user", "content": query_text},
         ],
