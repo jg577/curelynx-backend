@@ -44,7 +44,7 @@ def get_opensearch_results(content):
 
     # Elasticsearch query
     query = {
-        "size": 20,
+        "size": 10,
         "query": {
             "bool": {
                 "should": [
