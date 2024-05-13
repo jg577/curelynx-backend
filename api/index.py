@@ -44,7 +44,7 @@ def get_opensearch_results(content):
 
     # Elasticsearch query
     query = {
-        "size": 10,
+        "size": 5,
         "query": {
             "bool": {
                 "should": [
@@ -91,7 +91,7 @@ def get_opensearch_results(content):
             if key not in ["cities", "states", "countries", "locations"]
         }
         # hack for now
-        result = {"metadata": {"text": str(result)}}
+        result = {"metadata": {"text": result}}
         results.append(result)
 
     return results
